@@ -16,7 +16,7 @@ Import-Module (Join-Path $PSScriptRoot 'TestHelpers.psm1') -Force
 
 $gitAvailable = [bool](Get-GitExecutable)
 $lockPath = '.claude/engineering-template.lock.json'
-$nextVersion = '1.0.1'
+$nextVersion = Get-NextTestVersion -Version (Get-TemplateVersion -TemplateRoot (Get-RepositoryRoot)) -Part Patch
 $changedRule = '.claude/rules/eng-security.md'
 $customizedAgent = '.claude/agents/eng-backend-engineer.md'
 

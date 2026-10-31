@@ -174,7 +174,7 @@ Invoke-TestCase 'refuses to install a different version over an existing install
     $project = New-TestProject
     $otherTemplate = New-TestTemplate
     Assert-ExitCode 0 (Install-Template -ProjectRoot $project -TemplateRoot $otherTemplate) 'first install'
-    Set-TestTemplateVersion -TemplateRoot $otherTemplate -Version '9.0.0'
+    Set-TestTemplateVersion -TemplateRoot $otherTemplate -Version (Get-NextTestVersion -Version $version -Part Major)
     $result = Install-Template -ProjectRoot $project -TemplateRoot $otherTemplate
     Assert-ExitCode 1 $result 'install over a different version'
     Assert-True ($result.Output -match 'Update-EngineeringTemplate') 'points to the updater'
