@@ -1,0 +1,4 @@
+# Every change to the central engineering template needs review from its maintainer.
+# Add more owners per path as the maintainer group grows, for example:
+#   /distribution/managed/.claude/rules/eng-security.md   @ramilrana @security-team-member
+*   @ramilrana
