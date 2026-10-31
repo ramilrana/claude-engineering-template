@@ -15,6 +15,14 @@ Releases with deprecated or removed files, ownership changes or breaking changes
 
 ## [Unreleased]
 
+### Added
+
+- `tests/Test-Acceptance.ps1`: an end-to-end acceptance suite that installs the real distribution
+  into a realistic project, verifies that project-owned files stay byte-identical, installs again,
+  and updates to a newer release with one unchanged and one project-modified managed file. CI now
+  runs it on Windows PowerShell 5.1 and on PowerShell 7 for Windows and Linux. Repository tooling
+  only; nothing distributed to projects changes.
+
 ## [1.0.0] - 2026-10-31
 
 First stable release.
