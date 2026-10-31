@@ -23,6 +23,13 @@ Releases with deprecated or removed files, ownership changes or breaking changes
   runs it on Windows PowerShell 5.1 and on PowerShell 7 for Windows and Linux. Repository tooling
   only; nothing distributed to projects changes.
 
+### Fixed
+
+- Test suites no longer hard-code the "next" template version used by update scenarios. Once
+  `VERSION` reached one of those numbers, the suites failed and blocked the release gate; a 1.0.1
+  release rehearsal exposed this. Versions are now derived from `VERSION`, and a content test
+  rejects hard-coded versions in test suites.
+
 ## [1.0.0] - 2026-10-31
 
 First stable release.
