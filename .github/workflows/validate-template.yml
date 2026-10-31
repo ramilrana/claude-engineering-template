@@ -1,0 +1,44 @@
+name: Validate template
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Validation only reads the repository; it needs no secrets and no write access.
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-template-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows PowerShell 5.1
+            os: windows-latest
+            powershell: powershell
+          - name: PowerShell 7 on Windows
+            os: windows-latest
+            powershell: pwsh
+          - name: PowerShell 7 on Linux
+            os: ubuntu-latest
+            powershell: pwsh
+    steps:
+      - name: Check out repository
+        # Pinned to the full commit SHA of v7.0.1 to protect against tag tampering.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run validation and tests
+        shell: pwsh
+        run: '& ${{ matrix.powershell }} -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-EngineeringTemplate.ps1'
