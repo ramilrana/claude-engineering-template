@@ -63,7 +63,7 @@ No PowerShell modules, package managers, plugins or network access are required.
 ## Install into a project
 
 ```powershell
-git clone <url-of-this-repository> C:\Tools\claude-engineering-template
+git clone https://github.com/ramilrana/claude-engineering-template.git C:\Tools\claude-engineering-template
 cd C:\Tools\claude-engineering-template
 git checkout v1.0.0
 

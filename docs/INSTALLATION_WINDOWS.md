@@ -13,7 +13,7 @@ No modules, package managers or network access are needed.
 ## 1. Get the template
 
 ```powershell
-git clone <url-of-this-repository> C:\Tools\claude-engineering-template
+git clone https://github.com/ramilrana/claude-engineering-template.git C:\Tools\claude-engineering-template
 cd C:\Tools\claude-engineering-template
 git tag --list "v*"
 git checkout v1.0.0

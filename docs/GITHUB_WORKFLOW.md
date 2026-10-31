@@ -1,31 +1,32 @@
 # GitHub workflow
 
-## Publishing this repository for the first time
+## Repository
 
-The repository is created locally on branch `main`. Publishing is a manual, approved step:
+The central repository is public at
+<https://github.com/ramilrana/claude-engineering-template>. Public visibility lets branch
+protection, rulesets and secret scanning work on a free GitHub plan; the repository contains no
+secrets or project data.
 
-1. Create an empty repository on GitHub (for example `ramilrana/claude-engineering-template`),
-   private or public, without a README or license (they already exist).
-2. Add the remote and push:
+## Repository settings
 
-   ```powershell
-   git remote add origin https://github.com/ramilrana/claude-engineering-template.git
-   git push -u origin main
-   ```
-
-3. Push release tags only after they are approved: `git push origin v1.0.0`.
-4. Configure the repository settings below.
-
-## Recommended repository settings
+Applied through the GitHub API (`gh api`) and verified by reading them back:
 
 | Setting | Value |
 |---|---|
-| Branch protection / ruleset on `main` | Require a pull request, at least one approving review, review from code owners, and the status checks `Windows PowerShell 5.1`, `PowerShell 7 on Windows`, `PowerShell 7 on Linux`; block force pushes and deletion |
-| Tag protection / ruleset | Restrict creation of `v*` tags to maintainers |
+| Branch protection on `main` | Pull request required; status checks `Windows PowerShell 5.1`, `PowerShell 7 on Windows` and `PowerShell 7 on Linux` must pass on an up-to-date branch; conversations must be resolved; force pushes and deletion blocked; enforced for administrators too |
+| Required approvals | **0 while there is a single maintainer**, because GitHub does not let authors approve their own pull requests. When a second maintainer joins, raise it to 1 and require code-owner review |
+| Merge methods | Merge commits only, so logical commits are preserved; head branches are deleted after merge |
+| Ruleset "Protect release tags" | `v*` tags cannot be deleted, moved or force-updated once created |
 | Secret scanning and push protection | Enabled |
 | Private vulnerability reporting | Enabled (referenced by `SECURITY.md`) |
-| Dependabot | Enabled; `.github/dependabot.yml` keeps pinned actions current |
-| Actions permissions | Read-only `GITHUB_TOKEN` by default |
+| Dependabot alerts | Enabled; `.github/dependabot.yml` keeps the SHA-pinned actions current |
+| Actions permissions | Read-only `GITHUB_TOKEN` by default; workflows cannot approve pull requests |
+
+To raise required approvals later:
+
+```powershell
+gh api -X PATCH repos/ramilrana/claude-engineering-template/branches/main/protection/required_pull_request_reviews -F required_approving_review_count=1 -F require_code_owner_reviews=true
+```
 
 ## Changing this repository
 
