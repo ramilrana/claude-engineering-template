@@ -133,8 +133,10 @@ pwsh -NoProfile -File ./scripts/Test-EngineeringTemplate.ps1          # PowerShe
 .\scripts\Test-EngineeringTemplate.ps1 -Name Updates,ProjectIsolation  # selected suites
 ```
 
-Five suites run in isolated temporary directories: `Manifest`, `Installation`, `Updates`,
-`ProjectIsolation` and `ContentFormats`. CI runs them on Windows PowerShell 5.1 and on PowerShell 7
+Six suites run in isolated temporary directories: `Manifest`, `Installation`, `Updates`,
+`ProjectIsolation`, `ContentFormats`, and `Acceptance`, an end-to-end scenario that installs the
+real distribution into a realistic project, installs again, and updates to a newer release with one
+unchanged and one customized file. CI runs them on Windows PowerShell 5.1 and on PowerShell 7
 for Windows and Linux.
 
 ## Release process

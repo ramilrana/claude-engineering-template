@@ -15,8 +15,8 @@ when_to_use: "Use after changing anything in this repository, before opening a p
 
 3. Run it under PowerShell 7 if installed (`pwsh -NoProfile -File ./scripts/Test-EngineeringTemplate.ps1`).
    If PowerShell 7 is not installed, say so; CI covers PowerShell 7 on Windows and Linux.
-4. For a focused run use `-Name Manifest`, `Installation`, `Updates`, `ProjectIsolation` or
-   `ContentFormats` (comma-separated for several).
+4. For a focused run use `-Name Manifest`, `Installation`, `Updates`, `ProjectIsolation`,
+   `ContentFormats` or `Acceptance` (comma-separated for several).
 5. If agent, skill, rule or settings formats changed, compare them with the current official Claude
    Code documentation and update `tests/Test-ContentFormats.ps1` if the supported fields changed.
 6. Optional manual smoke test: install into a scratch directory outside this repository with
