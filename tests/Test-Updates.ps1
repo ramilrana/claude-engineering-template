@@ -10,7 +10,9 @@ Import-Module (Join-Path $PSScriptRoot 'TestHelpers.psm1') -Force
 
 $gitAvailable = [bool](Get-GitExecutable)
 $lockPath = '.claude/engineering-template.lock.json'
-$newVersion = '1.1.0'
+$baseVersion = Get-TemplateVersion -TemplateRoot (Get-RepositoryRoot)
+$newVersion = Get-NextTestVersion -Version $baseVersion
+$laterVersion = Get-NextTestVersion -Version $newVersion
 # Lives in a different directory from ChangedA and ChangedB, so the Unix rollback test can block
 # ChangedB's directory without also blocking this earlier write.
 $newFile = '.claude/engineering-standards/ADDED_IN_TEST.md'
@@ -247,12 +249,12 @@ Invoke-TestCase 'stops when a file changes ownership between versions' {
 Invoke-TestCase 'refuses a downgrade unless -AllowDowngrade is given' {
     $s = New-UpdateScenario
     Assert-ExitCode 0 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'update'
-    Set-TestTemplateVersion -TemplateRoot $s.Template -Version '1.0.5'
+    Set-TestTemplateVersion -TemplateRoot $s.Template -Version $baseVersion
     $result = Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project
     Assert-ExitCode 1 $result 'downgrade'
     Assert-True ($result.Output -match 'older') 'downgrade explained'
     Assert-ExitCode 0 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project -Arguments @('-AllowDowngrade')) 'explicit downgrade'
-    Assert-Equal '1.0.5' (Get-TestLock -ProjectRoot $s.Project).installedVersion 'downgraded version recorded'
+    Assert-Equal $baseVersion (Get-TestLock -ProjectRoot $s.Project).installedVersion 'downgraded version recorded'
 }
 
 Invoke-TestCase 'requires an existing installation' {
@@ -276,10 +278,10 @@ Invoke-TestCase 'deprecating an excluded file keeps the lock valid for later run
 Invoke-TestCase 'a deprecated file that returns in a later release is updated when unchanged' {
     $s = New-UpdateScenario
     Assert-ExitCode 0 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'update that deprecates'
-    Add-TestManifestEntry -TemplateRoot $s.Template -Source $s.Removed.source -Destination $s.Removed.destination -Content "Returned in 1.2.0`n"
-    Set-TestTemplateVersion -TemplateRoot $s.Template -Version '1.2.0'
+    Add-TestManifestEntry -TemplateRoot $s.Template -Source $s.Removed.source -Destination $s.Removed.destination -Content "Returned in $laterVersion`n"
+    Set-TestTemplateVersion -TemplateRoot $s.Template -Version $laterVersion
     Assert-ExitCode 0 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'update that brings the file back'
-    Assert-Equal "Returned in 1.2.0`n" (Get-TestFileText -Root $s.Project -RelativePath $s.Removed.destination) 'file updated'
+    Assert-Equal "Returned in $laterVersion`n" (Get-TestFileText -Root $s.Project -RelativePath $s.Removed.destination) 'file updated'
     Assert-Equal 'active' (Get-TestLockEntry -ProjectRoot $s.Project -Destination $s.Removed.destination).status 'lock status'
 }
 

@@ -35,7 +35,7 @@ function Invoke-InstallThenUpdate {
     $changed = @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'managed')[0..3]
     $changed += @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'project' | Where-Object { $_.destination -eq 'CLAUDE.md' })
     foreach ($entry in $changed) { Add-TestFileContent -Root $template -RelativePath $entry.source -Content "`nChanged for isolation test.`n" }
-    Set-TestTemplateVersion -TemplateRoot $template -Version '1.1.0'
+    Set-TestTemplateVersion -TemplateRoot $template -Version (Get-NextTestVersion -Version (Get-TemplateVersion -TemplateRoot $template))
     if (Get-GitExecutable) { Save-TestTemplateRevision -TemplateRoot $template }
     $update = Invoke-TemplateScript -TemplateRoot $template -Script 'Update-EngineeringTemplate.ps1' -Arguments @('-ProjectRoot', $ProjectRoot)
     Assert-True (@(0, 2) -contains $update.ExitCode) "update exit code $($update.ExitCode): $($update.Output)"

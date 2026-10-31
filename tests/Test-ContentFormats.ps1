@@ -192,6 +192,15 @@ Invoke-TestCase 'PowerShell sources are ASCII so Windows PowerShell 5.1 parses t
     }
 }
 
+Invoke-TestCase 'test suites derive template versions from VERSION instead of hard-coding them' {
+    # A hard-coded "next" version breaks the suites, and so blocks the release gate, once VERSION reaches it.
+    foreach ($file in Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'Test-*.ps1') {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        $hardCoded = [regex]::Matches($text, "(?i)(-Version\s+|Version\s*=\s*)'\d+\.\d+\.\d+'")
+        Assert-Equal 0 $hardCoded.Count "$($file.Name) hard-codes a version: $(@($hardCoded | ForEach-Object { $_.Value }) -join ', ')"
+    }
+}
+
 Invoke-TestCase 'distributed files use LF line endings so hashes match on every platform' {
     foreach ($file in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'distribution') -Recurse -File) {
         $bytes = [IO.File]::ReadAllBytes($file.FullName)

@@ -216,6 +216,24 @@ function Remove-TestManifestEntry {
     Set-TestManifestEntries -TemplateRoot $TemplateRoot -Entries $entries
 }
 
+function Get-NextTestVersion {
+    <#
+    .SYNOPSIS
+        Returns a version above Version (default: the next MINOR).
+    .DESCRIPTION
+        Update scenarios must derive their "newer release" from the repository's real VERSION.
+        A hard-coded version breaks the suites, and therefore the release gate, as soon as the
+        repository itself reaches that version.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Version, [ValidateSet('Major', 'Minor', 'Patch')][string]$Part = 'Minor')
+    $current = [version]$Version
+    switch ($Part) {
+        'Major' { return '{0}.0.0' -f ($current.Major + 1) }
+        'Minor' { return '{0}.{1}.0' -f $current.Major, ($current.Minor + 1) }
+        'Patch' { return '{0}.{1}.{2}' -f $current.Major, $current.Minor, ($current.Build + 1) }
+    }
+}
+
 function Set-TestTemplateVersion {
     param([string]$TemplateRoot, [string]$Version)
     [IO.File]::WriteAllText((Join-Path $TemplateRoot 'VERSION'), "$Version`n")
