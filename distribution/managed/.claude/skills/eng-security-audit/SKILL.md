@@ -23,14 +23,20 @@ Scope: $ARGUMENTS (if empty, ask whether to audit the whole project or a specifi
 3. Map the attack surface: entry points (routes, APIs, webhooks, jobs, CLI), trust boundaries,
    data stores, privileged operations, third-party integrations.
 
-## Step 2 - Collect evidence (read-only commands only)
+## Step 2 - Collect evidence (non-destructive commands only)
 
-Run only non-destructive commands, and ask before anything that contacts external services:
+Local, read-only:
 
 - `git ls-files` for committed secrets candidates (`.env`, keys, dumps); search for hard-coded
   credentials, tokens and private keys.
+
+Contacting external services (ask the user before running):
+
 - The package manager's audit command, if one exists (for example `npm audit`, `pnpm audit`,
-  `pip-audit`, `composer audit`, `bundle audit`, `dotnet list package --vulnerable`).
+  `pip-audit`, `composer audit`, `bundle audit`, `dotnet list package --vulnerable`). These send
+  the dependency list to an advisory service.
+
+Local, read-only:
 - Read framework security configuration: CORS, CSRF, cookies, headers, session and token settings.
 - Read CI workflows for permissions, secrets usage and unpinned actions.
 

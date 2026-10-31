@@ -29,7 +29,8 @@ Follow `.claude/engineering-standards/TESTING_STANDARD.md`:
 - Regression tests that reproduce reported bugs before the fix.
 - End-to-end tests for critical journeys only.
 - Responsive and accessibility checks at the widths in
-  `.claude/engineering-standards/RESPONSIVE_DESIGN_STANDARD.md` when browser tooling is available.
+  `.claude/engineering-standards/RESPONSIVE_DESIGN_STANDARD.md` when the project has browser tooling
+  you can run from the shell (for example Playwright); otherwise report them as not run.
 
 Tests are deterministic, isolated, named for the behavior they verify, and use only synthetic data.
 

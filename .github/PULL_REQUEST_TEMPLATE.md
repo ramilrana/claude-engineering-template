@@ -20,7 +20,7 @@
 
 <!-- Paste the summary lines of the actual runs. -->
 
-- [ ] `powershell -NoProfile -File ./scripts/Test-EngineeringTemplate.ps1` (Windows PowerShell 5.1)
+- [ ] `powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-EngineeringTemplate.ps1` (Windows PowerShell 5.1)
 - [ ] `pwsh -NoProfile -File ./scripts/Test-EngineeringTemplate.ps1` (PowerShell 7), or CI result
 - [ ] Agents, skills and rules checked against current Claude Code documentation where formats changed
 

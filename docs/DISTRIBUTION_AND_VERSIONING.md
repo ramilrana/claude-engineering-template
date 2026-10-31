@@ -30,6 +30,8 @@ Validation rejects the whole manifest when any entry:
 - has an unknown property, ownership or install value, or an install value that does not match
   its ownership;
 - has a destination outside the locations allowed for its ownership;
+- would place a project or example file where Claude Code loads instructions (a `.claude`
+  directory, or a `CLAUDE.md` other than the root one);
 - duplicates a destination or source (case-insensitively).
 
 The template version is not repeated in the manifest; `VERSION` is the only source.
@@ -87,26 +89,32 @@ written last, through a temporary file, and only when the whole run succeeded. C
 6. Print the plan. With `-WhatIf`, stop.
 7. Apply with verified copies, then write the lock (see "Applying a plan").
 
-Running the installer again for the same version changes nothing unless files changed.
+Running the installer again for the same version changes nothing unless files changed. Installer
+and updater share the decision table below, so a re-run also restores deleted managed files and,
+with a backup, refreshes managed files that are unchanged since installation.
 
 ## Update decision table
 
 | Situation | Action | Lock afterwards |
 |---|---|---|
 | Managed file does not exist | Install it (`Create`) | `active`, new hash |
-| Existing file identical to incoming | `Skip` | `active`, new hash |
+| Existing file identical to incoming | `Skip`, or `Adopt` when the lock had no active record for it | `active`, new hash |
 | Existing file matches the previously recorded hash | Back up, then replace (`Update`) | `active`, new hash |
-| Existing file differs from the recorded hash | Keep it; save `.incoming` and `.base` candidates (`Conflict`) | `conflict`, previous hash kept |
-| File exists at a managed path but was never recorded | Keep it; save candidate (`Conflict`) | `conflict`, no hash |
+| Existing file differs from the recorded hash, central version changed | Keep it; save `.incoming` and `.base` candidates (`Conflict`) | `conflict`, previous hash kept |
+| Existing file differs from the recorded hash, central version unchanged | Keep it; nothing to merge (`KeepCustomized`) | status and hash unchanged |
+| File exists at a managed path but its content was never recorded | Keep it; save candidate (`Conflict`) | `conflict`, no hash |
 | Managed file excluded by the project | Leave untouched (`Excluded`) | `excluded` |
-| Entry removed from the new manifest | Leave the file (`Deprecated`); never delete | `deprecated` |
-| Project-owned file exists | Keep it (`Preserve`); if its template changed, save an `.incoming` reference (`OfferReference`) | unchanged |
+| Entry removed from the new manifest | Leave the file (`Deprecated`); never delete | `deprecated`, hash kept if any |
+| Deprecated entry returns in a later release | Treated like any recorded file (unchanged files are updated, customized ones conflict) | `active` or `conflict` |
+| Project-owned file exists | Keep it (`Preserve`); if its template changed, save an `.incoming` reference once (`OfferReference`) | `templateSha256` set to the template offered; a file recreated after removal becomes `preserved` |
 | Project-owned file deleted by the project | Do not recreate (`RemovedByProject`) | `removed` |
 | Lock invalid, ownership changed between versions, unsafe path, older target version without `-AllowDowngrade` | Stop before writing | unchanged |
 | Any write fails | Roll back the run | unchanged |
 
-A file kept as a conflict stays a conflict on later updates until its content equals a central
-version, so a deliberate permanent customization is reported every time the central file changes.
+A customized file is reported as a conflict only when the central version differs from the one the
+project last installed. It stays a conflict on later updates until its content equals the central
+version; a deliberate permanent customization is therefore reported again only when the central
+file changes.
 
 ## Conflict candidates
 
@@ -118,7 +126,9 @@ version, so a deliberate permanent customization is reported every time the cent
 ```
 
 Leading dots are replaced (`.claude` -> `dot-claude`) and every file has a suffix, so Claude Code
-never loads candidates as rules, skills, agents or `CLAUDE.md`. The `.base` file comes from the
+never loads candidates as rules, skills, agents or `CLAUDE.md`. If a different candidate already
+exists from an earlier run of the same version, it is renamed to `<name>.superseded-<timestamp>`
+rather than deleted. The `.base` file comes from the
 template checkout's `v<templateVersion>` tag and is kept only when its hash equals the recorded hash.
 
 Reconcile with a three-way comparison of base, local and incoming (`git merge-file -p local base

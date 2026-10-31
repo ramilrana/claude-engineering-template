@@ -24,17 +24,19 @@ $applicationFiles = @{
 }
 
 function Invoke-InstallThenUpdate {
-    # Installs, upgrades the template to 1.1.0 with a changed managed file and a changed
-    # CLAUDE.md scaffold, then updates.
-    param([string]$ProjectRoot)
-    $template = New-TestTemplate
+    # Installs, upgrades the template to 1.1.0 with the first four managed files and the CLAUDE.md
+    # scaffold changed, then updates. With git available the template is tagged, so conflicts get
+    # .base candidates.
+    param([string]$ProjectRoot, [scriptblock]$BeforeUpgrade)
+    $template = New-TestTemplate -WithGit:([bool](Get-GitExecutable))
     $install = Invoke-TemplateScript -TemplateRoot $template -Script 'Install-EngineeringTemplate.ps1' -Arguments @('-ProjectRoot', $ProjectRoot, '-IncludeExamples')
     Assert-True (@(0, 2) -contains $install.ExitCode) "install exit code $($install.ExitCode): $($install.Output)"
-    $managed = @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'managed')[0]
-    $rootInstructions = @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'project' | Where-Object { $_.destination -eq 'CLAUDE.md' })[0]
-    Add-TestFileContent -Root $template -RelativePath $managed.source -Content "`nChanged for isolation test.`n"
-    Add-TestFileContent -Root $template -RelativePath $rootInstructions.source -Content "`nChanged for isolation test.`n"
+    if ($BeforeUpgrade) { & $BeforeUpgrade $template }
+    $changed = @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'managed')[0..3]
+    $changed += @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'project' | Where-Object { $_.destination -eq 'CLAUDE.md' })
+    foreach ($entry in $changed) { Add-TestFileContent -Root $template -RelativePath $entry.source -Content "`nChanged for isolation test.`n" }
     Set-TestTemplateVersion -TemplateRoot $template -Version '1.1.0'
+    if (Get-GitExecutable) { Save-TestTemplateRevision -TemplateRoot $template }
     $update = Invoke-TemplateScript -TemplateRoot $template -Script 'Update-EngineeringTemplate.ps1' -Arguments @('-ProjectRoot', $ProjectRoot)
     Assert-True (@(0, 2) -contains $update.ExitCode) "update exit code $($update.ExitCode): $($update.Output)"
     return $template
@@ -91,7 +93,9 @@ Invoke-TestCase 'refuses to write through a junction or symbolic link' {
     $project = Join-Path $workspace 'project'
     [void][IO.Directory]::CreateDirectory($outside)
     [void][IO.Directory]::CreateDirectory($project)
-    $link = Join-Path $project '.claude'
+    # .claude is a real directory, so the lock path is fine and the destination check must catch the link.
+    [void][IO.Directory]::CreateDirectory((Join-Path $project '.claude'))
+    $link = Join-Path $project '.claude/rules'
     if (Test-IsWindows) { New-Item -ItemType Junction -Path $link -Target $outside | Out-Null }
     else { New-Item -ItemType SymbolicLink -Path $link -Target $outside | Out-Null }
     try {
@@ -106,15 +110,21 @@ Invoke-TestCase 'refuses to write through a junction or symbolic link' {
 }
 
 Invoke-TestCase 'candidates and backups can never be loaded as Claude Code instructions' {
-    $files = @{}
-    $template = New-TestTemplate
-    foreach ($entry in @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'managed')[0..2]) { $files[$entry.destination] = "local edit`n" }
-    $files['CLAUDE.md'] = "Project instructions`n"
-    $project = New-TestProject -Files $files
-    [void](Invoke-InstallThenUpdate -ProjectRoot $project)
+    # Managed files 1-3 are customized after installation (conflicts with .base when git exists);
+    # managed file 0 is unchanged, so it is backed up and replaced.
+    $project = New-TestProject -Files @{ 'CLAUDE.md' = "Project instructions`n" }
+    [void](Invoke-InstallThenUpdate -ProjectRoot $project -BeforeUpgrade {
+            param($template)
+            foreach ($entry in @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'managed')[1..3]) {
+                Add-TestFileContent -Root $project -RelativePath $entry.destination -Content "`nlocal edit`n"
+            }
+        })
 
     $inactive = @((Get-DirectorySnapshot -Root $project).Keys | Where-Object { $_ -like '.template-update-*' })
-    Assert-True ($inactive.Count -gt 0) 'candidates were produced'
+    Assert-True (@($inactive | Where-Object { $_ -like '*.incoming' }).Count -ge 4) 'incoming candidates were produced'
+    Assert-True (@($inactive | Where-Object { $_ -like '*.bak' }).Count -ge 1) 'backups were produced'
+    Assert-True (@($inactive | Where-Object { $_ -like '*/backup.json' }).Count -eq 1) 'backup index was produced'
+    if (Get-GitExecutable) { Assert-True (@($inactive | Where-Object { $_ -like '*.base' }).Count -ge 3) 'base candidates were produced' }
     foreach ($path in $inactive) {
         $segments = $path.Split('/')
         Assert-True (-not ($segments | Where-Object { $_ -eq '.claude' })) "'$path' contains a .claude directory"

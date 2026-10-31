@@ -79,6 +79,11 @@ Progressive disclosure is acceptable when content remains reachable.
   content such as maps, complex data tables and diagrams.
 - Content remains usable at 200% zoom and with increased text spacing.
 - Respect `prefers-reduced-motion`; avoid flashing content.
+- Functionality that uses dragging (sliders, sortable lists, maps) also works with single taps or
+  clicks (2.5.7 Dragging Movements).
+- Authentication does not require a cognitive test such as remembering or transcribing a code:
+  allow paste and password managers, and offer alternatives to puzzle-style challenges
+  (3.3.8 Accessible Authentication (Minimum)).
 - Images have appropriate alternative text; decorative images are hidden from assistive technology.
 - Dynamic updates are announced where users need them (live regions used sparingly).
 
@@ -90,7 +95,8 @@ only source.
 
 At every representative width, and in landscape for phone and tablet widths where relevant:
 
-1. Horizontal overflow: `document.documentElement.scrollWidth > window.innerWidth` must be false.
+1. Horizontal overflow: `document.documentElement.scrollWidth > document.documentElement.clientWidth`
+   must be false.
 2. Clipped or overlapping content, including sticky and fixed elements.
 3. Navigation open, close and focus behavior.
 4. Dialogs, drawers and dropdowns stay within the viewport and are dismissible.

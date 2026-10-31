@@ -44,12 +44,17 @@ RESPONSIVE_DESIGN_STANDARD.md. Not applicable to projects without a user interfa
 
 ## Responsive behavior
 
-| Pattern | < 768 px | 768-1279 px | >= 1280 px |
-|---|---|---|---|
-| Navigation | | | |
-| Page layout | | | |
-| Data tables | | | |
-| Forms | | | |
+<!--
+Breakpoints are content-driven: record the actual values where each pattern changes. Verify every
+pattern at the representative widths (320 to 1920 px) in RESPONSIVE_DESIGN_STANDARD.md.
+-->
+
+| Pattern | Small screens | Medium screens | Large screens | Breakpoint(s) used |
+|---|---|---|---|---|
+| Navigation | | | | |
+| Page layout | | | | |
+| Data tables | | | | |
+| Forms | | | | |
 
 ## Accessibility
 

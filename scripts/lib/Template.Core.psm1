@@ -97,8 +97,8 @@ function Write-JsonFileAtomic {
     param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)]$Value)
     $json = ConvertTo-Json -InputObject $Value -Depth 10
     $temporaryPath = $Path + '.cet-tmp-' + [guid]::NewGuid().ToString('N')
-    [IO.File]::WriteAllText($temporaryPath, $json + "`n", (New-Object Text.UTF8Encoding($false)))
     try {
+        [IO.File]::WriteAllText($temporaryPath, $json + "`n", (New-Object Text.UTF8Encoding($false)))
         Move-FileReplacing -Source $temporaryPath -Destination $Path
     }
     catch {
@@ -293,6 +293,16 @@ function Get-PathAttributes {
     catch [IO.DirectoryNotFoundException] { return $null }
 }
 
+function Test-IsRedirectingLink {
+    # Junctions and symbolic links redirect writes elsewhere. Other reparse points, such as cloud-file
+    # placeholders (OneDrive) or deduplicated files, do not, and are allowed. When the link type
+    # cannot be determined the path is treated as a link, failing safe.
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    if ($null -eq $item -or $null -eq $item.PSObject.Properties['LinkType']) { return $true }
+    return @('Junction', 'SymbolicLink') -contains $item.LinkType
+}
+
 function Assert-NoReparsePoint {
     # Writing through a junction or symbolic link could escape the project directory even
     # when the textual path is contained, so every existing component below the root is checked.
@@ -300,7 +310,7 @@ function Assert-NoReparsePoint {
     $current = $FullPath
     while ($current.Length -gt $Root.Length) {
         $attributes = Get-PathAttributes -Path $current
-        if ($null -ne $attributes -and ($attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        if ($null -ne $attributes -and ($attributes -band [IO.FileAttributes]::ReparsePoint) -and (Test-IsRedirectingLink -Path $current)) {
             throw "Refusing to use '$RelativePath': '$current' is a symbolic link or junction."
         }
         $current = [IO.Path]::GetDirectoryName($current)
@@ -423,7 +433,17 @@ function Get-ManifestEntryErrors {
     elseif (-not (Test-DestinationAllowed -Destination $destination -Ownership $ownership)) {
         $errors.Add("destination '$destination' is not an allowed location for $ownership files ($($script:OwnershipPolicy[$ownership].AllowedDestinations -join ', '))")
     }
+    elseif ($ownership -ne 'managed' -and $destination -ne 'CLAUDE.md' -and (Test-LoadableInstructionPath -Destination $destination)) {
+        $errors.Add("destination '$destination' would be loaded by Claude Code as instructions; only managed files and the root CLAUDE.md may be")
+    }
     return $errors
+}
+
+function Test-LoadableInstructionPath {
+    # Claude Code discovers nested .claude directories and CLAUDE.md files anywhere in a project.
+    param([string]$Destination)
+    $segments = $Destination.Split('/')
+    return (@($segments | Where-Object { $_ -eq '.claude' }).Count -gt 0) -or (@('CLAUDE.md', 'CLAUDE.local.md') -contains $segments[-1])
 }
 
 function Get-ManifestErrors {
@@ -558,7 +578,9 @@ function Get-LockErrors {
             $sha256 = Get-OptionalProperty $entry 'sha256'
             $templateVersion = Get-OptionalProperty $entry 'templateVersion'
             if ($null -eq $sha256) {
-                if (@('conflict', 'excluded') -notcontains $status) { $errors.Add("${prefix}: sha256 is required for '$destination'") }
+                # Files the template never installed (pre-existing conflicts, exclusions) have no hash,
+                # and keep none when a later release deprecates them.
+                if (@('conflict', 'excluded', 'deprecated') -notcontains $status) { $errors.Add("${prefix}: sha256 is required for '$destination'") }
             }
             elseif ($sha256 -isnot [string] -or $sha256 -notmatch $script:Sha256Pattern) {
                 $errors.Add("${prefix}: sha256 for '$destination' is not a lowercase SHA-256 hex digest")
@@ -709,12 +731,17 @@ function Get-ManagedAction {
     param([bool]$IsExcluded, [bool]$Exists, [string]$LocalSha256, [string]$IncomingSha256, $LockEntry)
     if ($IsExcluded) { return @('Excluded', 'excluded by this project') }
     if (-not $Exists) { return @('Create', $null) }
+    $recordedSha256 = $null
+    if ($null -ne $LockEntry) { $recordedSha256 = $LockEntry.Sha256 }
     if ($LocalSha256 -eq $IncomingSha256) {
-        if ($null -eq $LockEntry -or $LockEntry.Status -eq 'deprecated') { return @('Adopt', 'identical file already present') }
+        if ($null -eq $LockEntry -or $LockEntry.Status -ne 'active') { return @('Adopt', 'identical file already present') }
         return @('Skip', $null)
     }
-    if ($null -eq $LockEntry -or $LockEntry.Status -eq 'deprecated') { return @('Conflict', 'a different file already exists at this path') }
-    if ($null -ne $LockEntry.Sha256 -and $LockEntry.Sha256 -eq $LocalSha256) { return @('Update', $null) }
+    # A file whose content the template never recorded is not ours to replace.
+    if ($null -eq $recordedSha256) { return @('Conflict', 'a different file already exists at this path') }
+    if ($recordedSha256 -eq $LocalSha256) { return @('Update', $null) }
+    # A customization only needs a merge decision when the central version moved on.
+    if ($recordedSha256 -eq $IncomingSha256) { return @('KeepCustomized', 'modified locally; central version unchanged') }
     return @('Conflict', 'modified locally since the last template install')
 }
 
@@ -829,6 +856,11 @@ function New-LockFileRecord {
         switch ($Operation.Action) {
             { @('Create', 'Update', 'Skip', 'Adopt') -contains $_ } { $status = 'active'; $sha256 = $Operation.IncomingSha256; $templateVersion = $Version }
             'Deprecated' { $status = 'deprecated'; $sha256 = $lockEntry.Sha256; $templateVersion = $lockEntry.TemplateVersion }
+            'KeepCustomized' {
+                $status = 'active'
+                if ($lockEntry.Status -eq 'conflict') { $status = 'conflict' }
+                $sha256 = $lockEntry.Sha256; $templateVersion = $lockEntry.TemplateVersion
+            }
             default {
                 # Conflict and Excluded keep the last content the template actually installed, which is
                 # what the next update needs to tell an unchanged file from a customized one.
@@ -857,7 +889,10 @@ function New-LockFileRecord {
 function New-LockDocument {
     param([Parameter(Mandatory = $true)]$Plan, [string]$Timestamp)
     $records = @($Plan.Operations | ForEach-Object { New-LockFileRecord -Operation $_ -Version $Plan.Version })
-    $sortedRecords = @($records | Sort-Object -Property { $_.destination } -CaseSensitive)
+    # Ordinal sorting keeps the lock byte-identical across cultures and PowerShell editions.
+    $keys = [string[]]@($records | ForEach-Object { $_.destination })
+    $sortedRecords = [object[]]$records.Clone()
+    [Array]::Sort($keys, $sortedRecords, [StringComparer]::Ordinal)
     $installedAt = $Timestamp
     if ($null -ne $Plan.Lock -and $Plan.Lock.InstalledAt) { $installedAt = $Plan.Lock.InstalledAt }
 
@@ -951,12 +986,13 @@ function Copy-VerifiedFile {
 }
 
 function Write-CandidateFile {
-    # Candidate files live in a tool-owned area, so an identical existing copy is reused and a
-    # stale copy from an earlier run of the same version is refreshed.
-    param([string]$Root, [string]$SourcePath, [string]$CandidatePath, [string]$ExpectedSha256, $Transaction)
+    # An identical existing candidate is reused. A different one (from an earlier run of the same
+    # version, possibly annotated by a person) is renamed aside rather than deleted, so nothing is
+    # lost even if this run is rolled back.
+    param([string]$Root, [string]$SourcePath, [string]$CandidatePath, [string]$ExpectedSha256, [string]$Timestamp, $Transaction)
     if ([IO.File]::Exists($CandidatePath)) {
         if ((Get-FileSha256 -Path $CandidatePath) -eq $ExpectedSha256) { return }
-        [IO.File]::Delete($CandidatePath)
+        [IO.File]::Move($CandidatePath, $CandidatePath + '.superseded-' + ($Timestamp -replace '[-:]', ''))
     }
     Copy-VerifiedFile -Root $Root -SourcePath $SourcePath -TargetPath $CandidatePath -ExpectedSha256 $ExpectedSha256 -Transaction $Transaction
 }
@@ -969,7 +1005,7 @@ function Write-BaseCandidate {
         The base is read from the template's git tag for the version recorded in the lock and is
         only kept when its hash matches the recorded hash. Returns a note describing the outcome.
     #>
-    param($Plan, $Operation, $Transaction)
+    param($Plan, $Operation, [string]$Timestamp, $Transaction)
     $lockEntry = $Operation.LockEntry
     if ($null -eq $lockEntry -or $null -eq $lockEntry.Sha256 -or $null -eq $lockEntry.TemplateVersion) {
         return "no base version for '$($Operation.Destination)' (the file was not installed by the template)"
@@ -985,7 +1021,7 @@ function Write-BaseCandidate {
         if ((Get-FileSha256 -Path $exportPath) -ne $lockEntry.Sha256) {
             return "no base version for '$($Operation.Destination)' (content at $tag does not match the recorded hash)"
         }
-        Write-CandidateFile -Root $Plan.ProjectRoot -SourcePath $exportPath -CandidatePath $basePath -ExpectedSha256 $lockEntry.Sha256 -Transaction $Transaction
+        Write-CandidateFile -Root $Plan.ProjectRoot -SourcePath $exportPath -CandidatePath $basePath -ExpectedSha256 $lockEntry.Sha256 -Timestamp $Timestamp -Transaction $Transaction
         return $null
     }
     finally {
@@ -1081,9 +1117,9 @@ function Invoke-TemplateSyncPlan {
                 }
                 { @('Conflict', 'OfferReference') -contains $_ } {
                     $candidatePath = Resolve-ContainedPath -Root $Plan.ProjectRoot -RelativePath $operation.CandidatePath
-                    Write-CandidateFile -Root $Plan.ProjectRoot -SourcePath $operation.SourcePath -CandidatePath $candidatePath -ExpectedSha256 $operation.IncomingSha256 -Transaction $transaction
+                    Write-CandidateFile -Root $Plan.ProjectRoot -SourcePath $operation.SourcePath -CandidatePath $candidatePath -ExpectedSha256 $operation.IncomingSha256 -Timestamp $timestamp -Transaction $transaction
                     if ($operation.Action -eq 'Conflict') {
-                        $note = Write-BaseCandidate -Plan $Plan -Operation $operation -Transaction $transaction
+                        $note = Write-BaseCandidate -Plan $Plan -Operation $operation -Timestamp $timestamp -Transaction $transaction
                         if ($note) { $notes.Add($note) }
                     }
                 }
@@ -1128,6 +1164,7 @@ $script:ActionDescriptions = [ordered]@{
     Adopt            = 'Adopt (identical file already present)'
     Skip             = 'Already current'
     Conflict         = 'CONFLICT - local file kept; incoming version saved as a candidate'
+    KeepCustomized   = 'Customized locally, kept (central version unchanged)'
     OfferReference   = 'Project-owned, kept; newer template saved for reference'
     Preserve         = 'Project-owned, kept'
     RemovedByProject = 'Removed by the project; not recreated'
@@ -1169,6 +1206,7 @@ function Write-TemplateSyncResult {
     if ($Result.BackupRelativePath) { Write-Host "Backups of replaced files: $($Result.BackupRelativePath)" }
     foreach ($note in $Result.Notes) { Write-Host "Note: $note" }
     if ($Result.LockWritten) { Write-Host "Recorded installation in $script:LockRelativePath" }
+    elseif ((Get-PlannedWriteCount -Plan $Plan) -gt 0) { Write-Host "Files were written as listed above; $script:LockRelativePath was already up to date." }
     else { Write-Host 'Nothing changed; the project already matches this template version.' }
 
     $conflicts = @($Plan.Operations | Where-Object { $_.Action -eq 'Conflict' })

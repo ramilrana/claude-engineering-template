@@ -22,7 +22,7 @@ Treat the browser, mobile clients and any third-party callers as untrusted.
 | Passwords | Hash with a current adaptive algorithm (Argon2id, scrypt or bcrypt) through a maintained library. Never store or log plaintext. Enforce length over composition rules; check against breached-password lists where feasible. |
 | Sessions | Server-side or signed sessions with `HttpOnly`, `Secure` and an appropriate `SameSite` cookie. Rotate the session identifier on login and privilege change. Idle and absolute timeouts. |
 | Tokens | Short-lived access tokens, validated signature, issuer, audience and expiry. Refresh tokens are rotated, revocable and stored securely. Never store tokens in `localStorage` when a cookie-based approach is possible. |
-| Login | Generic failure messages, rate limiting and lockout or backoff, no user enumeration. |
+| Login | Generic failure messages, rate limiting and lockout or backoff, no user enumeration. Allow paste and password managers. |
 | Logout | Invalidates the session or refresh token server-side. |
 | Password reset and recovery | Single-use, short-lived, high-entropy tokens stored hashed; no account enumeration; notify the user; invalidate existing sessions after reset. |
 | MFA | Offer or require it for administrative and high-risk accounts when appropriate. |

@@ -81,6 +81,7 @@ failing tests to get a green run, and never claim tests pass without running the
 
 ## 9. Continuous integration
 
-- The main branch's CI runs linting, type checks and the automated test suites on every pull request.
+- The main branch's CI runs the automated test suites on every pull request, plus linting and type
+  checks where the stack has them.
 - CI failures block merging.
 - Test commands in `docs/engineering/TESTING.md` match what CI runs.

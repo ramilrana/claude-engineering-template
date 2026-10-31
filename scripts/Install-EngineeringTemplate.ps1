@@ -8,8 +8,10 @@
       - managed files (shared rules, agents, skills, standards) are installed;
       - project-owned scaffold files are created only when they do not exist;
       - examples are installed only with -IncludeExamples.
-    Existing files are never overwritten. A different file at a managed path is reported as a
-    conflict and the incoming version is saved under .template-update-candidates/.
+    Project-owned and locally modified files are never overwritten. A different file at a managed
+    path is reported as a conflict and the incoming version is saved under
+    .template-update-candidates/. Re-running at the same version refreshes only managed files that
+    are unchanged since they were installed, after backing them up.
     The result is recorded in .claude/engineering-template.lock.json.
 
     Exit codes: 0 success, 1 failure (nothing changed), 2 completed with conflicts to review.

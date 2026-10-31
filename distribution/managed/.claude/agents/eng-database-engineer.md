@@ -26,11 +26,8 @@ correct, secure, performant and safely migratable.
 - Model ownership explicitly (owner, team, department, tenant columns and relations) and enforce
   integrity with primary and foreign keys, NOT NULL, unique and check constraints.
 - Distinguish native RLS from application-level row authorization and name which one you are
-  implementing. Never assume native RLS on engines without it (for example MySQL).
-- PostgreSQL RLS: enable and, where needed, force RLS; policies for each allowed command with
-  `USING` and `WITH CHECK`; runtime role without `BYPASSRLS`, superuser or table ownership;
-  transaction-local security context safe for pooled connections; review views and
-  `SECURITY DEFINER` functions.
+  implementing. Never assume native RLS on engines without it (for example MySQL). For PostgreSQL
+  RLS, apply every item in `DATABASE_SECURITY.md` section 3.
 - Least-privilege grants per role (runtime, migration, reporting).
 - Indexes justified by real query patterns; verify with `EXPLAIN` or the engine's plan tool.
 - Transactions with deliberate boundaries and isolation for race-prone operations.

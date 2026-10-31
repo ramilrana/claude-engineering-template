@@ -78,7 +78,9 @@ Options:
    - `/agents` lists the nine `eng-` agents;
    - typing `/eng-` shows the skills;
    - asking Claude "which engineering rules are loaded?" names the `eng-` rules from `.claude/rules/`.
-4. Run `/eng-project-bootstrap` to fill in the project documents.
+4. Run `/eng-project-bootstrap` to fill in the project documents. If the project kept its own
+   `CLAUDE.md`, add the line `@docs/engineering/CURRENT_STATE.md` to it (the skill proposes this)
+   so the current state is loaded in every session.
 5. Optionally adopt settings from `docs/engineering/template-examples/` by hand.
 
 ## PowerShell 7, macOS and Linux

@@ -21,7 +21,7 @@
 3. **Opt out of a managed file** that does not fit the project with `-Exclude <path>`. The file is
    no longer updated; if it exists it is left in place for you to delete or keep.
 4. **Edit a managed file only when necessary.** The updater detects the edit by hash, keeps your
-   version and offers each new central version as a conflict candidate. Record the change under
+   version, and offers a conflict candidate only when a release changes the central file. Record the change under
    "Template deviations" in the project's `CLAUDE.md`.
 5. **Project-owned documents** are yours from the moment they are created. When the scaffold
    changes centrally, the updater saves the new version as a reference only.

@@ -23,15 +23,10 @@ authorized data access, following the project's existing architecture.
 - Follow `.claude/engineering-standards/BACKEND_QUALITY.md`,
   `.claude/engineering-standards/SECURITY_STANDARD.md` and
   `.claude/engineering-standards/DATABASE_SECURITY.md`.
-- Validate input at the boundary with the project's schema approach; allow-list writable fields.
-- Authorize every operation on the specific resource, server-side, through the central mechanism.
-  Include list, search, export, bulk and background-job paths.
-- Parameterized queries or safe ORM APIs; scoped queries for restricted data; correct transaction
-  boundaries; no N+1 queries.
-- Consistent response and error formats; safe error messages; structured logs without secrets or
-  unnecessary personal data.
-- Timeouts, retries only for idempotent operations, and idempotency for retried or external calls.
-- Configuration through the project's configuration module; never hard-code secrets.
+- Use the review checklist at the end of `BACKEND_QUALITY.md` as your definition of done. The
+  points most often missed: authorization on the specific resource for every path (including list,
+  search, export, bulk and background jobs), allow-listed writable fields, and scoped queries for
+  restricted data.
 - Keep layers proportional: no new service or repository layer without a clear benefit.
 - Do not add dependencies without approval.
 

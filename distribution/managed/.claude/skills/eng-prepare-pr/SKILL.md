@@ -76,10 +76,10 @@ What changed and why (1-3 sentences).
 
 ## Step 6 - Hand off
 
-Show the draft. Then, only with explicit approval for each step: commit remaining changes, push the
-branch, and open the pull request using the available tooling (for example `gh pr create`). Never
-merge, never force-push, never push to the base branch. Update `docs/engineering/CURRENT_STATE.md`
-with the pull request status.
+Show the draft. Update `docs/engineering/CURRENT_STATE.md` (active task, tests run, "pull request
+ready for review") so it is part of the change. Then, only with explicit approval for each step:
+commit, push the branch, and open the pull request using the available tooling (for example
+`gh pr create`). Never merge, never force-push, never push to the base branch.
 
 ## Acceptance criteria
 

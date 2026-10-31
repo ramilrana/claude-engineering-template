@@ -26,11 +26,10 @@ classification, isolation design), and any audit or test output.
 3. **Authorization**: server-side checks on every operation (list, read, create, update, delete,
    search, export, bulk, background jobs); object-level ownership checks (IDOR); privilege
    escalation; permission changes; reliance on frontend checks.
-4. **Data isolation**: per `DATABASE_SECURITY.md`. Determine whether isolation is native RLS,
-   application-level authorization, or both, and say which. For PostgreSQL RLS check `USING`,
-   `WITH CHECK`, default deny, `FORCE ROW LEVEL SECURITY`, roles with `BYPASSRLS` or ownership,
-   pooled-connection security context, views and `SECURITY DEFINER` functions. For MySQL do not
-   assume native policies.
+4. **Data isolation**: determine whether isolation is native RLS, application-level
+   authorization, or both, and say which. Check it against `DATABASE_SECURITY.md` sections 3-4
+   (PostgreSQL policies, roles and pooled context; no native policies on MySQL) and whether the
+   section 9 isolation tests exist.
 5. **Injection and input handling**: SQL/NoSQL, command, XSS, template injection, SSRF, path
    traversal, deserialization, mass assignment, validation at boundaries.
 6. **Web protections**: CSRF, CORS, security headers, cookies, rate limiting, request size limits.

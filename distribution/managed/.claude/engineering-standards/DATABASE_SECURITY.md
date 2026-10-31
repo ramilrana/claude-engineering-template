@@ -47,7 +47,9 @@ Evaluate native RLS for multi-tenant or ownership-restricted tables.
   `SELECT set_config('app.tenant_id', $1, true);` (transaction-local) or `SET LOCAL`, and read it in
   policies with `current_setting('app.tenant_id', true)`. Session-level settings leak across
   pooled connections; with transaction-pooling poolers such as PgBouncer, only transaction-local
-  settings are safe.
+  settings are safe. After a transaction-local setting ends, `current_setting(..., true)` can return
+  an empty string rather than NULL on the same connection, so wrap it in `NULLIF(..., '')` before
+  casting; a missing context then matches no rows instead of raising an error.
 - Views run with the owner's privileges unless created with `security_invoker = true`
   (PostgreSQL 15+); check views and `SECURITY DEFINER` functions for bypasses.
 - Test policies directly with the application role, not as a superuser.
@@ -59,8 +61,8 @@ ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY documents_tenant_isolation ON documents
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 ```
 
 ## 4. MySQL and MariaDB

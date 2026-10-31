@@ -11,7 +11,9 @@ Import-Module (Join-Path $PSScriptRoot 'TestHelpers.psm1') -Force
 $gitAvailable = [bool](Get-GitExecutable)
 $lockPath = '.claude/engineering-template.lock.json'
 $newVersion = '1.1.0'
-$newRule = '.claude/rules/eng-added-in-test.md'
+# Lives in a different directory from ChangedA and ChangedB, so the Unix rollback test can block
+# ChangedB's directory without also blocking this earlier write.
+$newFile = '.claude/engineering-standards/ADDED_IN_TEST.md'
 
 function Invoke-Update {
     param([string]$TemplateRoot, [string]$ProjectRoot, [string[]]$Arguments = @())
@@ -22,8 +24,9 @@ function New-UpdateScenario {
     <#
     .SYNOPSIS
         Installs the current template into a new project, then turns the template into version 1.1.0 with:
-        two changed managed files (ChangedA before ChangedB in manifest order), one new managed rule
-        (first in manifest order), one managed file removed from the manifest and one changed scaffold file.
+        two changed managed files (ChangedA, a rule, before ChangedB, an agent, in manifest order), one
+        new managed file (first in manifest order), one managed file removed from the manifest and one
+        changed scaffold file.
     #>
     param([string[]]$InstallArguments = @(), [scriptblock]$BeforeUpgrade)
     $template = New-TestTemplate -WithGit:$gitAvailable
@@ -37,7 +40,7 @@ function New-UpdateScenario {
         Template       = $template
         Project        = $project
         ChangedA       = $managed[0]
-        ChangedB       = $managed[1]
+        ChangedB       = @($managed | Where-Object { $_.destination -like '.claude/agents/*' })[0]
         Removed        = $managed[2]
         Untouched      = $managed[3]
         Scaffold       = $scaffold
@@ -49,7 +52,7 @@ function New-UpdateScenario {
     Add-TestFileContent -Root $template -RelativePath $scenario.ChangedA.source -Content "`nChanged in $newVersion (A).`n"
     Add-TestFileContent -Root $template -RelativePath $scenario.ChangedB.source -Content "`nChanged in $newVersion (B).`n"
     Add-TestFileContent -Root $template -RelativePath $scenario.Scaffold.source -Content "`nNew scaffold guidance in $newVersion.`n"
-    Add-TestManifestEntry -TemplateRoot $template -Source 'distribution/managed/.claude/rules/eng-added-in-test.md' -Destination $newRule -Prepend
+    Add-TestManifestEntry -TemplateRoot $template -Source 'distribution/managed/.claude/engineering-standards/ADDED_IN_TEST.md' -Destination $newFile -Prepend
     Remove-TestManifestEntry -TemplateRoot $template -Destination $scenario.Removed.destination
     if ($gitAvailable) { Save-TestTemplateRevision -TemplateRoot $template }
     return $scenario
@@ -74,7 +77,7 @@ Invoke-TestCase 'updates unchanged managed files, adds new files and records the
     Assert-MatchesTemplate $s $s.ChangedA
     Assert-MatchesTemplate $s $s.ChangedB
     Assert-MatchesTemplate $s $s.Untouched
-    Assert-FileExists (Get-TestPath -Root $s.Project -RelativePath $newRule)
+    Assert-FileExists (Get-TestPath -Root $s.Project -RelativePath $newFile)
     Assert-Equal "application code`n" (Get-TestFileText -Root $s.Project -RelativePath 'src/app.txt') 'application file unchanged'
 
     $lock = Get-TestLock -ProjectRoot $s.Project
@@ -140,6 +143,18 @@ Invoke-TestCase 'a conflict persists across updates until reconciled, then is re
     $record = Get-TestLockEntry -ProjectRoot $s.Project -Destination $s.ChangedA.destination
     Assert-Equal 'active' $record.status 'reconciled status'
     Assert-Equal (Get-FileSha256 -Path $incoming) $record.sha256 'reconciled hash'
+}
+
+Invoke-TestCase 'keeps a customized file quietly when its central version did not change' {
+    $s = New-UpdateScenario -BeforeUpgrade { param($scenario) Add-TestFileContent -Root $scenario.Project -RelativePath $scenario.Untouched.destination -Content "`nProject customization.`n" }
+    $customized = Get-FileSha256 -Path (Get-TestPath -Root $s.Project -RelativePath $s.Untouched.destination)
+    $result = Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project
+    Assert-ExitCode 0 $result 'update'
+    Assert-Equal $customized (Get-FileSha256 -Path (Get-TestPath -Root $s.Project -RelativePath $s.Untouched.destination)) 'customization kept'
+    Assert-FileMissing (Get-TestPath -Root $s.Project -RelativePath (Get-CandidatePath -Destination $s.Untouched.destination -Suffix '.incoming'))
+    $record = Get-TestLockEntry -ProjectRoot $s.Project -Destination $s.Untouched.destination
+    Assert-Equal 'active' $record.status 'lock status'
+    Assert-Equal (Get-FileSha256 -Path (Get-TestPath -Root $s.Template -RelativePath $s.Untouched.source)) $record.sha256 'lock keeps the central hash'
 }
 
 Invoke-TestCase 'reinstalls a managed file that was deleted locally' {
@@ -246,6 +261,41 @@ Invoke-TestCase 'requires an existing installation' {
     Assert-True ($result.Output -match 'Install-EngineeringTemplate') 'points to the installer'
 }
 
+Invoke-TestCase 'deprecating an excluded file keeps the lock valid for later runs' {
+    $template = New-TestTemplate
+    $excluded = @(Get-TestManifestEntries -TemplateRoot $template -Ownership 'managed')[4]
+    $project = New-TestProject
+    Assert-ExitCode 0 (Invoke-TemplateScript -TemplateRoot $template -Script 'Install-EngineeringTemplate.ps1' -Arguments @('-ProjectRoot', $project, '-Exclude', $excluded.destination)) 'install'
+    Remove-TestManifestEntry -TemplateRoot $template -Destination $excluded.destination
+    Set-TestTemplateVersion -TemplateRoot $template -Version $newVersion
+    Assert-ExitCode 0 (Invoke-Update -TemplateRoot $template -ProjectRoot $project) 'update that deprecates the excluded file'
+    Assert-ExitCode 0 (Invoke-Update -TemplateRoot $template -ProjectRoot $project) 'next update reads the lock'
+    Assert-Equal 'deprecated' (Get-TestLockEntry -ProjectRoot $project -Destination $excluded.destination).status 'lock status'
+}
+
+Invoke-TestCase 'a deprecated file that returns in a later release is updated when unchanged' {
+    $s = New-UpdateScenario
+    Assert-ExitCode 0 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'update that deprecates'
+    Add-TestManifestEntry -TemplateRoot $s.Template -Source $s.Removed.source -Destination $s.Removed.destination -Content "Returned in 1.2.0`n"
+    Set-TestTemplateVersion -TemplateRoot $s.Template -Version '1.2.0'
+    Assert-ExitCode 0 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'update that brings the file back'
+    Assert-Equal "Returned in 1.2.0`n" (Get-TestFileText -Root $s.Project -RelativePath $s.Removed.destination) 'file updated'
+    Assert-Equal 'active' (Get-TestLockEntry -ProjectRoot $s.Project -Destination $s.Removed.destination).status 'lock status'
+}
+
+Invoke-TestCase 'a stale conflict candidate is renamed aside, never deleted' {
+    $s = New-UpdateScenario -BeforeUpgrade { param($scenario) Add-TestFileContent -Root $scenario.Project -RelativePath $scenario.ChangedA.destination -Content "`nProject customization.`n" }
+    Assert-ExitCode 2 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'first update'
+    $candidate = Get-CandidatePath -Destination $s.ChangedA.destination -Suffix '.incoming'
+    Add-TestFileContent -Root $s.Project -RelativePath $candidate -Content "`nReviewer notes.`n"
+    Add-TestFileContent -Root $s.Template -RelativePath $s.ChangedA.source -Content "`nSecond change in $newVersion.`n"
+    Assert-ExitCode 2 (Invoke-Update -TemplateRoot $s.Template -ProjectRoot $s.Project) 'second update'
+    $candidateDirectory = Split-Path -Parent (Get-TestPath -Root $s.Project -RelativePath $candidate)
+    $superseded = @(Get-ChildItem -LiteralPath $candidateDirectory -Filter '*.incoming.superseded-*')
+    Assert-Equal 1 $superseded.Count 'superseded candidate kept'
+    Assert-True ([IO.File]::ReadAllText($superseded[0].FullName) -match 'Reviewer notes') 'annotations preserved'
+}
+
 Invoke-TestCase 'rolls back every change and keeps the lock when a write fails' {
     $s = New-UpdateScenario
     $before = Get-DirectorySnapshot -Root $s.Project
@@ -262,7 +312,7 @@ Invoke-TestCase 'rolls back every change and keeps the lock when a write fails' 
     foreach ($path in $difference.Added) {
         Assert-True ($path -like '.template-update-backups/*') "only backups may remain after rollback, found '$path'"
     }
-    Assert-FileMissing (Get-TestPath -Root $s.Project -RelativePath $newRule)
+    Assert-FileMissing (Get-TestPath -Root $s.Project -RelativePath $newFile)
 }
 
 exit (Complete-TestRun)

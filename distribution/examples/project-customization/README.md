@@ -7,7 +7,8 @@ These files are inactive reference material copied by `Install-EngineeringTempla
 
 - `settings.recommended.json` - conservative permission rules: read-only Git commands allowed,
   history-changing and publishing commands require approval, secrets and destructive Git commands
-  denied.
+  denied. Each command rule exists for both the `Bash` and the `PowerShell` tool, because on Windows
+  Claude Code may run commands through either.
 - `settings.hooks.example.json` and `hooks/guard-destructive-commands.ps1` - an example
   PreToolUse hook that blocks common destructive shell commands.
 
@@ -37,8 +38,8 @@ project's own) for local rules, agents and skills, so names never collide with t
 
 To change a shared rule's behavior, prefer adding a stricter project rule over editing the
 template file. If you must edit a managed `eng-` file, record the change under "Template
-deviations" in `CLAUDE.md`; the updater will then keep your version and report a conflict
-candidate whenever the central file changes. To stop receiving a managed file entirely, use
+deviations" in `CLAUDE.md`; the updater keeps your version and reports a conflict candidate only
+when a new release changes the central file. To stop receiving a managed file entirely, use
 `Update-EngineeringTemplate.ps1 -Exclude <path>`.
 
 Project customizations may strengthen the shared standards. They must not silently weaken

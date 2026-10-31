@@ -159,6 +159,8 @@ Invoke-TestCase 'the example guard hook blocks destructive commands and allows o
         'Remove-Item -Recurse -Force .\dist' = 2
         'psql -c "DROP TABLE users"'         = 2
         'git commit --no-verify -m x'        = 2
+        'git branch -D old-feature'          = 2
+        'git branch -d merged-feature'       = 0
         'git status'                         = 0
         'git push origin feature/x'          = 0
         'npm test'                           = 0

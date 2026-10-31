@@ -24,7 +24,7 @@ $blockedPatterns = @(
     @{ Pattern = 'git\s+reset\s+[^\n]*--hard\b'; Reason = 'git reset --hard discards uncommitted work' }
     @{ Pattern = 'git\s+clean\s+[^\n]*-[a-z]*f'; Reason = 'git clean -f deletes untracked files' }
     @{ Pattern = 'git\s+(checkout|restore)\s+(--\s+)?\.(\s|$)'; Reason = 'discards all uncommitted changes' }
-    @{ Pattern = 'git\s+branch\s+[^\n]*-D\b'; Reason = 'force-deletes a branch' }
+    @{ Pattern = 'git\s+branch\s+[^\n]*(?-i:-D)\b'; Reason = 'force-deletes a branch' } # -d (safe delete) stays allowed
     @{ Pattern = '--no-verify\b'; Reason = 'skips repository hooks' }
     @{ Pattern = '\brm\s+-[a-z]*(rf|fr)[a-z]*\b'; Reason = 'recursive forced deletion' }
     @{ Pattern = 'Remove-Item\b(?=[^\n]*-Recurse)(?=[^\n]*-Force)'; Reason = 'recursive forced deletion' }

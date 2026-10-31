@@ -37,8 +37,10 @@ responsive, accessible and consistent with the project's design system.
 
 - Run the relevant linters, type checks and tests and report actual results.
 - Add or update component and interaction tests following the project's conventions.
-- When browser tooling exists, check the changed screens at 320, 375, 768, 1024, 1440 and 1920 px at
-  minimum and report what you saw; otherwise state that responsive behavior is unverified.
+- When the project has browser tooling you can run from the shell (for example Playwright), check
+  the changed screens at every representative width in `RESPONSIVE_DESIGN_STANDARD.md` and report
+  what you saw; otherwise state that responsive behavior is unverified and leave the rendered check
+  to the main session.
 
 ## Boundaries
 

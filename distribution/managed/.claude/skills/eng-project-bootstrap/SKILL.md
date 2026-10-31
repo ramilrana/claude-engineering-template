@@ -74,6 +74,9 @@ them as approved. Mark unapproved sections as "Proposed".
 
 1. Update the project's root `CLAUDE.md`: purpose, commands (install, run, test, lint, build),
    key paths, project-specific rules and any intentional template deviations. Keep it concise.
+   If the project already had its own `CLAUDE.md` before the template was installed, propose
+   adding a short "Session start" note and the line `@docs/engineering/CURRENT_STATE.md` so the
+   current state loads in every session, as the template's scaffold does.
 2. Fill `docs/engineering/CURRENT_STATE.md` with the phase, branch, last verified commit,
    working-tree status, completed and next tasks.
 3. Suggest project-specific rules (`.claude/rules/project-*.md`) only where the project needs

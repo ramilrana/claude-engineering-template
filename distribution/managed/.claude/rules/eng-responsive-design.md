@@ -33,7 +33,8 @@ Phones, tablets, laptops, desktops and large displays, in portrait and landscape
 
 Semantic HTML, keyboard operability, visible focus, labelled form controls, accessible validation
 messages, sufficient contrast, screen-reader names and roles, touch targets of at least 24x24 CSS
-pixels (44x44 preferred), support for 200% zoom, `prefers-reduced-motion`, and reflow at 320 CSS
+pixels (44x44 preferred), support for 200% zoom, `prefers-reduced-motion`, single-pointer
+alternatives to dragging, sign-in that allows paste and password managers, and reflow at 320 CSS
 pixels without two-dimensional scrolling except for genuinely two-dimensional content.
 
 ## Verify before calling it done

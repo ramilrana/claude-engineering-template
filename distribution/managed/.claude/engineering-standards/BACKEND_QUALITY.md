@@ -24,15 +24,17 @@ language and database; follow existing conventions.
 ## 2. Validation
 
 - Validate every request at the transport boundary with one schema approach per project.
-- Use allow-lists for writable fields; reject or ignore unknown fields consistently.
+- Use allow-lists for writable fields and reject unknown fields on writes, so client mistakes and
+  mass-assignment attempts surface as validation errors.
 - Domain invariants are also enforced in domain logic and, where possible, by database constraints.
 
 ## 3. API design
 
 - Consistent resource naming, HTTP methods and status codes (or the project's RPC/GraphQL
   conventions).
-- One response envelope and one error format across the API, including a machine-readable code,
-  a safe message and a correlation identifier.
+- Consistent response shapes and one error format across the API (following the project's or
+  framework's convention), including a machine-readable code, a safe message and, where the
+  platform supports it, a correlation identifier.
 - Pagination, filtering and sorting with limits and allow-listed fields.
 - Version or evolve APIs without breaking existing clients; document breaking changes.
 - Document endpoints in the project's API documentation format when one exists.

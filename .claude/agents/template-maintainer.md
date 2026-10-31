@@ -1,7 +1,7 @@
 ---
 name: template-maintainer
 description: "Maintainer for the claude-engineering-template repository itself. Use for changes to distributed rules, agents, skills, standards, the manifest, the install and update scripts, tests and release preparation in this repository."
-tools: Read, Grep, Glob, Edit, Write, Bash
+tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch, WebSearch
 model: opus
 effort: high
 color: blue

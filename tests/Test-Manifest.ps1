@@ -93,6 +93,16 @@ Invoke-TestCase 'rejects a project file aimed at application source' {
     } -Pattern 'not an allowed location for project files'
 }
 
+Invoke-TestCase 'rejects project files placed where Claude Code would load them as instructions' {
+    foreach ($destination in @('docs/engineering/CLAUDE.md', 'docs/engineering/.claude/skills/x/SKILL.md')) {
+        Assert-ManifestRejected -Mutate {
+            param($m)
+            $entry = @($m.files | Where-Object { $_.ownership -eq 'project' -and $_.destination -ne 'CLAUDE.md' })[0]
+            $entry.destination = $destination
+        } -Pattern 'would be loaded by Claude Code'
+    }
+}
+
 Invoke-TestCase 'rejects an install behavior that does not match ownership' {
     Assert-ManifestRejected -Mutate { param($m) $m.files[0].install = 'ifMissing' } -Pattern "install must be 'always'"
 }
