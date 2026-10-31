@@ -1,0 +1,28 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Logs and local output
+*.log
+/artifacts/
+
+# Secrets must never be committed
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+
+# Personal Claude Code configuration
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Template operations accidentally run against this repository
+.template-update-candidates/
+.template-update-backups/
+*.cet-tmp-*
