@@ -32,6 +32,9 @@ permissions documentation); deny rules, hooks and human review are layers, not g
   area of a project. Copy it to `.claude/rules/project-<topic>.md` and edit it.
 - `project-agent.example.md` - a project-specific agent. Copy it to
   `.claude/agents/project-<role>.md` and edit it.
+- `workflow-tools.example.md` - a filled-in "Workflow tools" section for `CLAUDE.md`, naming the
+  project's own tools for some workflow stages. The tools in it are examples, not
+  recommendations; review each one before adopting it (see the file).
 
 Naming: the `eng-` prefix is reserved for template-managed files. Use a `project-` prefix (or the
 project's own) for local rules, agents and skills, so names never collide with template files.

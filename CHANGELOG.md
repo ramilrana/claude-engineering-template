@@ -22,6 +22,28 @@ Releases with deprecated or removed files, ownership changes or breaking changes
   and updates to a newer release with one unchanged and one project-modified managed file. CI now
   runs it on Windows PowerShell 5.1 and on PowerShell 7 for Windows and Linux. Repository tooling
   only; nothing distributed to projects changes.
+- Workflow stages with project tools: `ENGINEERING_WORKFLOW.md` section 4 lists the workflow
+  stages (brainstorm, plan, design system, design references, screen design and build, design
+  audit, polish, test, browser verification, review, pull request), each with a template default.
+  A project can name its own skill, plugin or agent for a stage in the new "Workflow tools"
+  section of `CLAUDE.md`. The template still needs no third-party tool.
+- `SECURITY_STANDARD.md` section 10: a review procedure for third-party skills, plugins, agents,
+  MCP servers and hooks (approval, pinned download, reading every file, license, side effects,
+  exact-command permissions, hooks off, documentation).
+- Opt-in example `docs/engineering/template-examples/workflow-tools.example.md`.
+- Content tests: the stage list, the scaffold section, the example's stage names, the security
+  section, no unpinned `@latest` or pipe-to-shell installs in distributed files, and section
+  references between distributed documents that resolve.
+
+### Changed
+
+- `ENGINEERING_WORKFLOW.md`: sections 4 to 6 are now 5 to 7; Phase B uses the project's declared
+  brainstorming tool instead of "a brainstorming skill if one is installed".
+- `eng-workflow-continuity` rule, `eng-frontend-design` and `eng-project-bootstrap` skills and
+  `FRONTEND_QUALITY.md` section 7 point to the project's workflow tools and to the template
+  defaults.
+- Scaffold `CLAUDE.md` has a "Workflow tools" section. Existing projects own their `CLAUDE.md`, so
+  the update only stores the new scaffold as a reference; add the section by hand if you want it.
 
 ### Fixed
 

@@ -25,7 +25,7 @@ the same stack or architecture.
 | `.claude/agents/eng-*.md` | Template-managed | 9 agents: architect and 4 read-only reviewers (Opus, high effort); frontend, backend, database and QA engineers (Sonnet) |
 | `.claude/skills/eng-*/SKILL.md` | Template-managed | 7 skills: project bootstrap, resume, security audit, responsive audit, frontend design, prepare PR, template update |
 | `CLAUDE.md`, `docs/engineering/*.md` | Project-owned | Root instructions and 9 project documents (requirements, stack, architecture, security, plan, design system, testing, deployment, current state), created only if missing |
-| `docs/engineering/template-examples/` | Project-owned, opt-in | Recommended settings, a guard hook, customization samples (inactive) |
+| `docs/engineering/template-examples/` | Project-owned, opt-in | Recommended settings, a guard hook, customization samples including a "Workflow tools" section (inactive) |
 | `.claude/engineering-template.lock.json` | Tool-owned | Installed version, file ownership and SHA-256 hashes |
 
 The template never writes `.claude/settings.json`, `.claude/settings.local.json`, hooks, MCP
@@ -115,7 +115,9 @@ stay on an older release indefinitely.
 
 Projects own their `CLAUDE.md`, `docs/engineering/`, settings, hooks and any `project-*` rules,
 agents and skills. Shared standards can be strengthened locally but must not be silently weakened;
-intentional deviations are recorded in the project's `CLAUDE.md`. See
+intentional deviations are recorded in the project's `CLAUDE.md`. A project can also name its
+own tools (for example design or audit skills) for individual workflow stages in the "Workflow
+tools" section of its `CLAUDE.md`; every stage it leaves out uses the template default. See
 [docs/CUSTOMIZATION_POLICY.md](docs/CUSTOMIZATION_POLICY.md).
 
 ## Development and contribution

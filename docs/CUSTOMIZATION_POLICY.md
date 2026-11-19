@@ -23,7 +23,14 @@
 4. **Edit a managed file only when necessary.** The updater detects the edit by hash, keeps your
    version, and offers a conflict candidate only when a release changes the central file. Record the change under
    "Template deviations" in the project's `CLAUDE.md`.
-5. **Project-owned documents** are yours from the moment they are created. When the scaffold
+5. **Name your own workflow tools.** The "Workflow tools" section of the project's `CLAUDE.md`
+   names the project's skill, plugin or agent for a workflow stage (for example a design-audit
+   skill); every other stage uses the template default. The stages and defaults are in
+   `ENGINEERING_WORKFLOW.md` section 4. A third-party tool is adopted only after the review in
+   `SECURITY_STANDARD.md` section 10 and pinned to a version or commit. This replaces the default
+   for that stage; it is not a template deviation. Example:
+   `distribution/examples/project-customization/workflow-tools.example.md`.
+6. **Project-owned documents** are yours from the moment they are created. When the scaffold
    changes centrally, the updater saves the new version as a reference only.
 
 ## What customizations may not do
