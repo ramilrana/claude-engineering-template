@@ -58,8 +58,10 @@ possible and the `eng-frontend-engineer` agent for implementation.
 
 ## Step 4 - Validate
 
-When a screen is built, review it with `eng-responsive-audit` and, for an independent opinion,
-`eng-frontend-design-reviewer`.
+When a screen is built, audit and polish it with the tools the project names for those stages in
+the "Workflow tools" section of `CLAUDE.md`. Without them, review it with `eng-responsive-audit`
+and, for an independent opinion, `eng-frontend-design-reviewer`
+(`.claude/engineering-standards/ENGINEERING_WORKFLOW.md` section 4).
 
 ## Acceptance criteria
 

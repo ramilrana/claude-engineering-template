@@ -182,6 +182,81 @@ Invoke-TestCase 'repository-maintenance agent and skill are valid' {
     Assert-Equal 'template-validation' $parsed.Values['name'] 'skill name'
 }
 
+function Get-MarkdownTableRows {
+    # Cells of the first table after an exact heading line, without the header and separator rows.
+    param([string]$Path, [string]$Heading)
+    $lines = [IO.File]::ReadAllText($Path).Split("`n")
+    $start = [Array]::IndexOf($lines, $Heading)
+    Assert-True ($start -ge 0) "$(Split-Path -Leaf $Path) has the heading '$Heading'"
+    $tableLines = @()
+    for ($index = $start + 1; $index -lt $lines.Count; $index++) {
+        $line = $lines[$index]
+        if ($line.StartsWith('#')) { break }
+        if ($line.StartsWith('|')) { $tableLines += $line }
+        elseif ($tableLines.Count -gt 0) { break }
+    }
+    return @($tableLines | Select-Object -Skip 2 | ForEach-Object {
+            [pscustomobject]@{ Cells = @($_.Trim().Trim('|').Split('|') | ForEach-Object { $_.Trim() }) }
+        })
+}
+
+$workflowStandard = Join-Path $managedRoot 'engineering-standards/ENGINEERING_WORKFLOW.md'
+$workflowStageHeading = '## 4. Workflow stages and project tools'
+
+Invoke-TestCase 'the workflow standard gives every stage a template default' {
+    $rows = Get-MarkdownTableRows -Path $workflowStandard -Heading $workflowStageHeading
+    $expected = @('Brainstorm', 'Plan', 'Design system', 'Design references', 'Screen design and build',
+        'Design audit', 'Polish', 'Test', 'Browser verification', 'Review', 'Pull request')
+    Assert-Equal ($expected -join ', ') (@($rows | ForEach-Object { $_.Cells[0] }) -join ', ') 'workflow stages'
+    foreach ($row in $rows) { Assert-True ($row.Cells.Count -ge 2 -and $row.Cells[1].Length -gt 0) "stage '$($row.Cells[0])' has a template default" }
+}
+
+Invoke-TestCase 'projects declare workflow tools in CLAUDE.md and the always-loaded rule points there' {
+    $scaffold = [IO.File]::ReadAllText((Join-Path $repositoryRoot 'distribution/scaffold/CLAUDE.md'))
+    Assert-True ($scaffold.Contains("`n## Workflow tools`n")) 'scaffold CLAUDE.md has a Workflow tools section'
+    Assert-True ($scaffold.Contains('ENGINEERING_WORKFLOW.md')) 'scaffold points to the stage list'
+    Assert-True ($scaffold.Contains('SECURITY_STANDARD.md')) 'scaffold points to the third-party tool review'
+    $rule = [IO.File]::ReadAllText((Join-Path $managedRoot 'rules/eng-workflow-continuity.md'))
+    Assert-True ($rule.Contains('Workflow tools')) 'eng-workflow-continuity mentions the Workflow tools table'
+}
+
+Invoke-TestCase 'the workflow tools example uses only the standard stage names' {
+    $stages = @(Get-MarkdownTableRows -Path $workflowStandard -Heading $workflowStageHeading | ForEach-Object { $_.Cells[0] })
+    $example = Join-Path $repositoryRoot 'distribution/examples/project-customization/workflow-tools.example.md'
+    $rows = Get-MarkdownTableRows -Path $example -Heading '## Workflow tools'
+    Assert-True ($rows.Count -ge 3) 'example declares several stages'
+    foreach ($row in $rows) { Assert-True ($stages -contains $row.Cells[0]) "example stage '$($row.Cells[0])' is a standard stage" }
+}
+
+Invoke-TestCase 'the security standard covers adopting third-party agent tools in its supply-chain section' {
+    $text = [IO.File]::ReadAllText((Join-Path $managedRoot 'engineering-standards/SECURITY_STANDARD.md'))
+    $section = [regex]::Match($text, '(?s)\n## 10\. [^\n]*\n(.*?)\n## 11\. ')
+    Assert-True $section.Success 'SECURITY_STANDARD.md has sections 10 and 11'
+    Assert-True ($section.Groups[1].Value.Contains("`n### Third-party skills, plugins and agent tools`n")) 'section 10 covers third-party agent tools'
+}
+
+Invoke-TestCase 'distributed content never installs or runs tools unpinned' {
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'distribution') -Recurse -File) {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        Assert-True ($text -notmatch '(?i)@latest\b') "$($file.FullName) uses an unpinned @latest version"
+        Assert-True ($text -notmatch '(?i)\b(curl|wget|iwr|irm)\b[^\n]*\|\s*(ba|z)?sh\b') "$($file.FullName) pipes a download into a shell"
+    }
+}
+
+Invoke-TestCase 'section references between distributed documents resolve' {
+    $documents = @{}
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'distribution') -Recurse -File -Filter '*.md') { $documents[$file.Name] = $file.FullName }
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'distribution') -Recurse -File -Filter '*.md') {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        foreach ($match in [regex]::Matches($text, '([A-Z_]+\.md)`?\s+section\s+(\d+)')) {
+            $target = $match.Groups[1].Value
+            Assert-True $documents.ContainsKey($target) "$($file.Name) references a section of unknown document $target"
+            $heading = "`n## $($match.Groups[2].Value). "
+            Assert-True ([IO.File]::ReadAllText($documents[$target]).Contains($heading)) "$($file.Name) references $target section $($match.Groups[2].Value), which does not exist"
+        }
+    }
+}
+
 Invoke-TestCase 'PowerShell sources are ASCII so Windows PowerShell 5.1 parses them correctly' {
     $sources = Get-ChildItem -LiteralPath $repositoryRoot -Recurse -File |
         Where-Object { @('.ps1', '.psm1') -contains $_.Extension -and $_.FullName -notmatch '[\\/]\.git[\\/]' }

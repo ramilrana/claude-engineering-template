@@ -65,7 +65,7 @@ docs/engineering/*.md      -> the project's own requirements, architecture, plan
 | Reviewer agents without Bash or write tools | Read-only is enforced by Claude Code, not just requested in a prompt | The main session must supply diffs and test output to reviewers |
 | No Pester or other modules | Windows PowerShell ships Pester 3.4, incompatible with Pester 5; nothing to install | A small custom assertion helper (`tests/TestHelpers.psm1`) |
 | PowerShell only | Native on Windows; PowerShell 7 runs on macOS and Linux | macOS and Linux users install PowerShell 7 |
-| No third-party skills or plugins | The template must be complete and maintainable on its own | Optional tools can be recommended but are never required |
+| No third-party skills or plugins | The template must be complete and maintainable on its own | Optional tools are never required; a project names its own per workflow stage in `CLAUDE.md`, and the template supplies the default for every stage |
 
 ## Known limitations
 

@@ -58,6 +58,22 @@ path-specific rules in .claude/rules/project-*.md. Name local agents and skills 
 prefix; the eng- prefix is reserved for template-managed files.
 -->
 
+## Workflow tools
+
+<!--
+Optional. Name the skill, plugin or agent this project uses for a workflow stage; every stage not
+listed uses the template default. Stage names and defaults are in
+.claude/engineering-standards/ENGINEERING_WORKFLOW.md section 4. Adopt a third-party tool only after
+the review in .claude/engineering-standards/SECURITY_STANDARD.md section 10, pinned to a version or
+commit. Format:
+
+| Stage | Tool and how to run it | Pinned version |
+|---|---|---|
+| Design audit | `/example-audit` skill | commit abc1234 |
+-->
+
+None: every stage uses the template default.
+
 ## Template deviations
 
 <!--

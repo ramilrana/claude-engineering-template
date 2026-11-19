@@ -48,8 +48,9 @@ authentication, integrations, build tools, test tools, deployment environment.
 ## Step 4 - Requirements (write `docs/engineering/PROJECT_REQUIREMENTS.md`)
 
 Clarify goals, scope, non-goals, stakeholders, users and roles, functional and non-functional
-requirements, constraints and acceptance criteria. Use a brainstorming skill if one is installed;
-otherwise ask focused questions, a few at a time. Skip what is already approved.
+requirements, constraints and acceptance criteria. Use the project's brainstorming tool if
+`CLAUDE.md` declares one; otherwise ask focused questions, a few at a time. Skip what is already
+approved.
 
 ## Step 5 - Architecture and plan
 
@@ -73,7 +74,9 @@ them as approved. Mark unapproved sections as "Proposed".
 ## Step 6 - Project instructions and state
 
 1. Update the project's root `CLAUDE.md`: purpose, commands (install, run, test, lint, build),
-   key paths, project-specific rules and any intentional template deviations. Keep it concise.
+   key paths, project-specific rules, any workflow tools the project uses (none is required; see
+   `.claude/engineering-standards/ENGINEERING_WORKFLOW.md` section 4) and any intentional template
+   deviations. Keep it concise.
    If the project already had its own `CLAUDE.md` before the template was installed, propose
    adding a short "Session start" note and the line `@docs/engineering/CURRENT_STATE.md` so the
    current state loads in every session, as the template's scaffold does.

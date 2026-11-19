@@ -75,9 +75,9 @@ next step), error (with recovery), success, and overflowing or very long content
 ## 7. Optional external design resources
 
 Third-party design skills and references can be useful but are never required by this template.
-Before adopting one, review its availability, documentation, license, maintenance status and
-security, and get approval. Do not copy third-party code or assets without license review and
-attribution.
+A project may name them for the design stages in `ENGINEERING_WORKFLOW.md` section 4, after the
+review in `SECURITY_STANDARD.md` section 10. Their output is held to this standard. Do not copy
+third-party code or assets without license review and attribution.
 
 ## 8. Review checklist
 

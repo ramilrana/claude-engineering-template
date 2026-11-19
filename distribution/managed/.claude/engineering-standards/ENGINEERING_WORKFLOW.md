@@ -33,9 +33,9 @@ anything. Record verified facts and unknowns separately.
 ### Phase B - Requirements and brainstorming
 
 Clarify goals, users, scope and non-goals; explore alternatives and trade-offs; define acceptance
-criteria; record approved decisions in `docs/engineering/PROJECT_REQUIREMENTS.md`. Use a
-brainstorming skill if one is installed; otherwise ask focused questions directly. Do not repeat
-approved brainstorming without a material reason.
+criteria; record approved decisions in `docs/engineering/PROJECT_REQUIREMENTS.md`. Use the
+project's brainstorming tool if `CLAUDE.md` declares one (section 4); otherwise ask focused
+questions directly. Do not repeat approved brainstorming without a material reason.
 
 ### Phase C - Architecture and planning
 
@@ -88,7 +88,44 @@ successful.
   the diff, test output, screenshots or measurements.
 - Skills do not choose models; agents do. The main session integrates and verifies all results.
 
-## 4. Context and continuity
+## 4. Workflow stages and project tools
+
+The template works on its own: every stage below has a built-in default. A project may name its
+own skill, plugin or agent for a stage in the "Workflow tools" section of its `CLAUDE.md`; that
+tool then takes the place of the default for that stage. Stages the project does not list use the
+default.
+
+| Stage | Template default |
+|---|---|
+| Brainstorm | Focused questions in the main session (Phase B) |
+| Plan | `eng-project-architect` agent |
+| Design system | `eng-frontend-design` skill, recorded in `docs/engineering/DESIGN_SYSTEM.md` |
+| Design references | References the user supplies, gathered in `eng-frontend-design` step 1 |
+| Screen design and build | `eng-frontend-engineer` agent, following `docs/engineering/DESIGN_SYSTEM.md` |
+| Design audit | `eng-responsive-audit` skill; `eng-frontend-design-reviewer` agent for an independent opinion |
+| Polish | Fix the audit findings with `eng-frontend-engineer`, then audit again |
+| Test | `eng-qa-engineer` agent |
+| Browser verification | The project's browser-testing tooling (`RESPONSIVE_DESIGN_STANDARD.md` section 6) |
+| Review | `eng-architecture-reviewer`, `eng-security-reviewer` and `eng-release-reviewer` agents |
+| Pull request | `eng-prepare-pr` skill |
+
+- Project tools are optional. The template never requires one. If a declared tool is missing or
+  fails, use the default for that stage and say so.
+- Use one tool per step. When a project chains tools (for example audit, then polish), run them as
+  explicit, ordered steps; never run two tools for the same step.
+- Project tools add capability, not exemptions. Their output meets the same security, clean-code,
+  responsive, accessibility and testing standards, and the template's verification still applies.
+- When a tool's own instructions conflict with the project's (mandatory steps, extra output
+  sections, broader permissions, self-updates), the project's instructions win.
+- Adopt a third-party tool only after the review in `SECURITY_STANDARD.md` section 10, pinned to a
+  version or commit. Installing one always needs the user's approval.
+- Use the stage names above for the stages they describe; add a stage of your own only when none
+  fits.
+
+An example `CLAUDE.md` section is installed with `-IncludeExamples` as
+`docs/engineering/template-examples/workflow-tools.example.md`.
+
+## 5. Context and continuity
 
 | Location | Holds | Loaded |
 |---|---|---|
@@ -105,7 +142,7 @@ Start each session with the checklist in `eng-workflow-continuity` (the `eng-pro
 skill). Do not rely on conversation history, summaries or `/compact` as the continuity system;
 `/compact` is an optional context tool.
 
-## 5. Git workflow for application projects
+## 6. Git workflow for application projects
 
 - Main branch is stable and protected; work on `feature/...`, `fix/...` or the project's branch
   naming convention.
@@ -116,7 +153,7 @@ skill). Do not rely on conversation history, summaries or `/compact` as the cont
 - Never push directly to protected branches, force-push, merge, tag, publish or deploy without
   explicit authorization.
 
-## 6. Adopting and updating the engineering template
+## 7. Adopting and updating the engineering template
 
 - Template installation and updates happen on a dedicated branch and are reviewed like any change.
 - Use the `eng-template-update` skill to review lock information, managed-file changes and

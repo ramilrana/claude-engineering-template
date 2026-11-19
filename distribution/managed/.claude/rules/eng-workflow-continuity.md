@@ -41,3 +41,6 @@ The `eng-project-resume` skill performs this procedure.
   `eng-frontend-design-reviewer`, `eng-release-reviewer`. Reviewers cannot run commands, so give
   them the diff, test output and screenshots or measurements they need.
 - The main session coordinates, integrates results and remains responsible for verification.
+- If `CLAUDE.md` has a "Workflow tools" section, use the tool it names for a stage and the template
+  default for every other stage (`ENGINEERING_WORKFLOW.md` section 4). Project tools never replace
+  these rules or their verification.

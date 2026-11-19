@@ -57,6 +57,7 @@
     { "source": "distribution/examples/hooks/guard-destructive-commands.ps1", "destination": "docs/engineering/template-examples/hooks/guard-destructive-commands.ps1", "ownership": "example", "install": "optIn" },
     { "source": "distribution/examples/project-customization/README.md", "destination": "docs/engineering/template-examples/README.md", "ownership": "example", "install": "optIn" },
     { "source": "distribution/examples/project-customization/project-rule.example.md", "destination": "docs/engineering/template-examples/project-rule.example.md", "ownership": "example", "install": "optIn" },
-    { "source": "distribution/examples/project-customization/project-agent.example.md", "destination": "docs/engineering/template-examples/project-agent.example.md", "ownership": "example", "install": "optIn" }
+    { "source": "distribution/examples/project-customization/project-agent.example.md", "destination": "docs/engineering/template-examples/project-agent.example.md", "ownership": "example", "install": "optIn" },
+    { "source": "distribution/examples/project-customization/workflow-tools.example.md", "destination": "docs/engineering/template-examples/workflow-tools.example.md", "ownership": "example", "install": "optIn" }
   ]
 }
